@@ -272,7 +272,19 @@ def create_ubl_invoice(invoice_data):
     cbc_TaxInclusiveAmount.text = ""
 
     # Recuperation les factures de Transalp dans le dossier InputFile et la lecture en Pandas
-    transalp_invoice = pd.read_csv(ptf.inputfilepath + invoice_data)
+    if invoice_data.endswith('.csv') or invoice_data.endswith('.xlsx') or invoice_data.endswith('.xls'):
+
+        if invoice_data.endswith('.xlsx') or invoice_data.endswith('.xls'):
+
+            transalp_invoice = pd.read_excel(ptf.inputfilepath + invoice_data)
+
+        else:
+
+            transalp_invoice = pd.read_csv(ptf.inputfilepath + invoice_data)
+
+    else:
+        return
+
 
     # Calcul de la somme totale des valeurs de la TVA
     tax_amount_sum = transalp_invoice['TVA'].sum();

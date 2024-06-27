@@ -23,9 +23,10 @@ if __name__ == "__main__":
 
             # Create the invoice into ubl format
             invoice = create_ubl_invoice(invoice_data)
+            file_format = invoice_data.split(".")[-1]
 
             # Save the invoice to a file
-            save_invoice_to_file(invoice, outputfilepath + f"/Facture_{invoice_data}.xml".replace(".csv",""))
+            save_invoice_to_file(invoice, outputfilepath + f"/Facture_{invoice_data}.xml".replace(file_format,""))
 
             # Move the invoice to the archive directory
             shutil.move(ptf.inputfilepath + invoice_data, archiveFilePath)
