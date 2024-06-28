@@ -3,6 +3,8 @@ import shutil
 
 import transalp_params_funct as tpf
 import params_tech as ptf
+from datetime import datetime
+
 
 from facture_ubl_process import create_ubl_invoice, save_invoice_to_file
 
@@ -26,7 +28,11 @@ if __name__ == "__main__":
             file_format = invoice_data.split(".")[-1]
 
             # Save the invoice to a file
-            save_invoice_to_file(invoice, outputfilepath + f"/Facture_{invoice_data}.xml".replace(file_format,""))
+
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
+            outputfile_name = 'INVOICE-' + tpf.customer_siren + '_FRS-' + timestamp
+
+            save_invoice_to_file(invoice, outputfilepath + f"/{outputfile_name}.xml".replace(file_format,""))
 
             # Move the invoice to the archive directory
             shutil.move(ptf.inputfilepath + invoice_data, archiveFilePath)

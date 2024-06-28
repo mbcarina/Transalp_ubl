@@ -9,6 +9,7 @@ import orange_params_funct as opf
 import params_tech as ptf
 from pathlib import Path
 
+
 fake = Faker()
 
 # Define namespaces
@@ -37,7 +38,7 @@ def create_ubl_invoice(invoice_data):
 
     # /Invoice/cbc:ID
     etree.SubElement(root,
-                     "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}ID").text = tpf.invoice_cbc_id
+                     "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}ID").text = tpf.fake_invoice_cbc_id
 
     # /Invoice/cbc:IssueDate
     etree.SubElement(root,
@@ -305,6 +306,13 @@ def create_ubl_invoice(invoice_data):
     # Recuperation de la reference de commande de Orange France
     transalp_orange_reference = transalp_invoice['Num contrat'][0]
 
+    transalp_fact_num= transalp_invoice['Num fac'][0]
+
+    #print("transalp_fact_num",transalp_fact_num)
+
+    # etree.SubElement(root,
+    #                  "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}ID").text = transalp_fact_num
+
     etree.SubElement(cac_order_reference,
                      "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}ID").text = str(
         transalp_orange_reference)
@@ -444,5 +452,12 @@ def create_ubl_invoice(invoice_data):
 
 # Save the invoice to a file
 def save_invoice_to_file(invoice, file_path):
+
     tree = etree.ElementTree(invoice)
-    tree.write(file_path, pretty_print=True, xml_declaration=True, encoding="utf-8")
+
+    with open(file_path, "wb") as file:
+
+        tree.write(file, pretty_print=True, xml_declaration=True, encoding="utf-8")
+
+
+        #tree.write(file_path, pretty_print=True, xml_declaration=True, encoding="utf-8")
