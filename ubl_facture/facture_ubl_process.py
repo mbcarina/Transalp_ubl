@@ -27,8 +27,24 @@ nsmap = {
 # Function 1: Generates an invoice XML element
 def create_ubl_invoice(invoice_data):
     # INFORMATIONS GENERALES DE LA FACTURE UBL
+
+    # Recuperation les factures de Transalp dans le dossier InputFile et la lecture en Pandas
+    if invoice_data.endswith('.csv') or invoice_data.endswith('.xlsx') or invoice_data.endswith('.xls'):
+
+        if invoice_data.endswith('.xlsx') or invoice_data.endswith('.xls'):
+
+            transalp_invoice = pd.read_excel(ptf.inputfilepath + invoice_data)
+
+        else:
+
+            transalp_invoice = pd.read_csv(ptf.inputfilepath + invoice_data)
+
+    else:
+        return
+
     # /Invoice
     root = etree.Element('{urn:oasis:names:specification:ubl:schema:xsd:Invoice-2}Invoice', nsmap=nsmap)
+
     root.attrib[
         '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'] = 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2 http://docs.oasis-open.org/ubl/os-UBL-2.1/xsd/maindoc/UBL-Invoice-2.1.xsd'
 
@@ -37,8 +53,13 @@ def create_ubl_invoice(invoice_data):
                      "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}UBLVersionID").text = opf.UBLVersionID
 
     # /Invoice/cbc:ID
+    # etree.SubElement(root,
+    #                  "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}ID").text = tpf.fake_invoice_cbc_id
+
+    transalp_fact_num = transalp_invoice['Num fac'][0]
+
     etree.SubElement(root,
-                     "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}ID").text = tpf.fake_invoice_cbc_id
+                     "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}ID").text = transalp_fact_num
 
     # /Invoice/cbc:IssueDate
     etree.SubElement(root,
@@ -123,7 +144,7 @@ def create_ubl_invoice(invoice_data):
 
     # /Invoice/cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cac:RegistrationAddress/cac:Country
     cac_country = etree.SubElement(cac_RegistrationAddress,
-                                   "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}Country")
+                                   "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}Country")
 
     # /Invoice/cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cac:RegistrationAddress/cac:Country/cbc:IdentificationCode
     etree.SubElement(cac_country,
@@ -162,20 +183,23 @@ def create_ubl_invoice(invoice_data):
                                               "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}PostalAddress")
 
     # Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:AddressLine
-    cac_AddressLine_cust = etree.SubElement(cac_PostalAddress_cust,
-                                            "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}AddressLine")
+    # cac_AddressLine_cust = etree.SubElement(cac_PostalAddress_cust,
+    #                                         "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}AddressLine")
 
     # Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:AddressLine/cbc:StreetName
-    etree.SubElement(cac_AddressLine_cust,
+    etree.SubElement(cac_PostalAddress_cust,
                      "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}StreetName").text = opf.customer_streetName
 
+    etree.SubElement(cac_PostalAddress_cust,
+                     "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}CityName").text = opf.customer_cityName
+
     # Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cbc:PostalZone
-    etree.SubElement(cac_AddressLine_cust,
+    etree.SubElement(cac_PostalAddress_cust,
                      "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}PostalZone").text = opf.customer_postalZone
 
     # Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:Country
     cac_Country_cust = etree.SubElement(cac_PostalAddress_cust,
-                                        "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}Country")
+                                        "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}Country")
 
     # Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode
     etree.SubElement(cac_Country_cust,
@@ -216,7 +240,8 @@ def create_ubl_invoice(invoice_data):
 
     # /Invoice/cac:Delivery/cac:DeliveryLocation/cac:Address/cac:Country
     cac_Country_delivery = etree.SubElement(cac_Address_delivery,
-                                            "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}Country")
+                                            "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}Country")
+
 
     # /Invoice/cac:Delivery/cac:DeliveryLocation/cac:Address/cac:Country/cbc:IdentificationCode
     etree.SubElement(cac_Country_delivery,
@@ -268,23 +293,10 @@ def create_ubl_invoice(invoice_data):
 
     # /Invoice/cac:LegalMonetaryTotal/cbc:PayableAmount
     cbc_PayableAmount = etree.SubElement(cac_LegalMonetaryTotal,
-                                         "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}PayableAmount");
+                                         "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}PayableAmount"); cbc_PayableAmount.attrib['currencyID'] = "EUR";
     cbc_TaxInclusiveAmount.attrib['currencyID'] = "EUR";
     cbc_TaxInclusiveAmount.text = ""
 
-    # Recuperation les factures de Transalp dans le dossier InputFile et la lecture en Pandas
-    if invoice_data.endswith('.csv') or invoice_data.endswith('.xlsx') or invoice_data.endswith('.xls'):
-
-        if invoice_data.endswith('.xlsx') or invoice_data.endswith('.xls'):
-
-            transalp_invoice = pd.read_excel(ptf.inputfilepath + invoice_data)
-
-        else:
-
-            transalp_invoice = pd.read_csv(ptf.inputfilepath + invoice_data)
-
-    else:
-        return
 
 
     # Calcul de la somme totale des valeurs de la TVA
@@ -306,7 +318,7 @@ def create_ubl_invoice(invoice_data):
     # Recuperation de la reference de commande de Orange France
     transalp_orange_reference = transalp_invoice['Num contrat'][0]
 
-    transalp_fact_num= transalp_invoice['Num fac'][0]
+    #transalp_fact_num= transalp_invoice['Num fac'][0]
 
     #print("transalp_fact_num",transalp_fact_num)
 
@@ -433,17 +445,17 @@ def create_ubl_invoice(invoice_data):
                                      "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}Price")
 
         # /Invoice/cac:InvoiceLine/cac:Price/cbc:PriceAmount
-        etree.SubElement(cac_price,
-                         "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}PriceAmount").text = str(
-            row['PU'])
+        cbc_price=etree.SubElement(cac_price,
+                         "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}PriceAmount"); cbc_price.text = str(
+            row['PU']); cbc_price.attrib['currencyID'] = "EUR"
 
         # /Invoice/cac:InvoiceLine/cac:Price/cbc:BaseQuantity
         cbc_BaseQuantity = etree.SubElement(cac_price,
-                                            "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}BaseQuantity")
+                                            "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}BaseQuantity"); cbc_BaseQuantity.text = '1'; cbc_BaseQuantity.attrib['unitCode'] = tpf.Unitemesure
 
         # /Invoice/cac:InvoiceLine/cac:Price/cbc:BaseQuantity/cbc:unitCode
-        etree.SubElement(cbc_BaseQuantity,
-                         "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}unitCode").text = tpf.Unitemesure
+        # etree.SubElement(cbc_BaseQuantity,
+        #                  "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}unitCode").text = tpf.Unitemesure
 
     return root
 
