@@ -7,11 +7,20 @@ from datetime import datetime
 
 
 from facture_ubl_process import create_ubl_invoice, save_invoice_to_file
+from facture_ubl_split_inputFile import split_excel_by_column_main
+
 
 if __name__ == "__main__":
 
-    # Get the list of invoices
-    Invoices= os.listdir(ptf.inputfilepath)
+    # Split the input file by customer
+    try:
+        split_excel_by_column_main(ptf.inputfilepath, 'Num fac', ptf.inputfilepath)
+
+        Invoices = os.listdir(ptf.inputfilepath)
+
+    except Exception as e:
+
+        print(f"Error: {e}")
 
     if len(Invoices) > 0:
 
