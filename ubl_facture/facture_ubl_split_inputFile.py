@@ -19,7 +19,7 @@ def split_excel_by_column(file_path, column_name, output_dir):
     for group_name, group_df in grouped:
         output_file = os.path.join(output_dir, f"{group_name}.xlsx")
         group_df.to_excel(output_file, index=False)
-        print(f"Saved {output_file}")
+        #print(f"Saved {output_file}")
 
 
 def split_excel_by_column_main(file_path, column_name, output_dir):
