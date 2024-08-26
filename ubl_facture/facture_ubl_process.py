@@ -63,7 +63,8 @@ def create_ubl_invoice(invoice_data):
 
     # /Invoice/cbc:IssueDate
     etree.SubElement(root,
-                     "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}IssueDate").text = tpf.invoice_cbc_issueDate
+                     "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}IssueDate").text = str((transalp_invoice['Date de facture'][0]).strftime('%Y-%m-%d'))
+        #tpf.invoice_cbc_issueDate
 
     # /Invoice/cbc:InvoiceTypeCode
     etree.SubElement(root,
@@ -274,57 +275,93 @@ def create_ubl_invoice(invoice_data):
                                       "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}TaxAmount");
     cbc_tax_amount.attrib['currencyID'] = "EUR"
 
+    # Calcul de la somme totale des valeurs de la TVA
+    tax_amount_sum = transalp_invoice['TVA'][0] ; cbc_tax_amount.text = str(tax_amount_sum)
+
+    # Valeurs pieds de la facture modification ici
+    # /Invoice/cac:TaxTotal/cac:TaxSubtotal/
+    cac_TaxSubtotal = etree.SubElement(cac_tax_total,
+                                       "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}TaxSubtotal")
+
+    # /Invoice/cac:TaxTotal/cac:TaxSubtotal/cbc:TaxableAmount
+    cbc_TaxableAmount = etree.SubElement(cac_TaxSubtotal,
+                                         "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}TaxableAmount");
+
+    cbc_TaxableAmount.attrib['currencyID'] = "EUR";
+
+    cbc_TaxableAmount.text = str(transalp_invoice['HT'][0])
+
+    # /Invoice/cac:TaxTotal/cac:TaxSubtotal/cbc:TaxAmount
+    cbc_TaxAmount = etree.SubElement(cac_TaxSubtotal,
+                                     "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}TaxAmount");
+    cbc_TaxAmount.attrib['currencyID'] = "EUR"
+    cbc_TaxAmount.text = str(tax_amount_sum)
+
+
+    # /Invoice/cac:TaxTotal/cac:TaxSubtotal/cbc:Percent
+    cbc_percent = etree.SubElement(cac_TaxSubtotal,
+                               "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}Percent");
+    cbc_percent.text = str(transalp_invoice['code TVA'][0])
+
+    # /Invoice/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory
+    cac_TaxCategory = etree.SubElement(cac_TaxSubtotal,
+                                   "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}TaxCategory")
+
+    # /Invoice/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID
+
+    cac_TaxScheme_pied = etree.SubElement(cac_TaxCategory,
+                                      "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}TaxScheme")
+
+    # /Invoice/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID
+    etree.SubElement(cac_TaxScheme_pied,
+                 "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}ID").text = "VAT"
+
     # Pied de la facture: MONTANT TOTAL DE LA FACTURE
     # /Invoice/cac:LegalMonetaryTotal
     cac_LegalMonetaryTotal = etree.SubElement(root,
-                                              "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}LegalMonetaryTotal")
+                                          "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}LegalMonetaryTotal")
 
     # /Invoice/cac:LegalMonetaryTotal/cbc:TaxExclusiveAmount
     cbc_TaxExclusiveAmount = etree.SubElement(cac_LegalMonetaryTotal,
-                                              "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}TaxExclusiveAmount");
+                                          "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}TaxExclusiveAmount");
     cbc_TaxExclusiveAmount.attrib['currencyID'] = "EUR";
     cbc_TaxExclusiveAmount.text = ""
 
     # /Invoice/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount
     cbc_TaxInclusiveAmount = etree.SubElement(cac_LegalMonetaryTotal,
-                                              "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}TaxInclusiveAmount");
+                                          "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}TaxInclusiveAmount");
     cbc_TaxInclusiveAmount.attrib['currencyID'] = "EUR";
     cbc_TaxInclusiveAmount.text = ""
 
     # /Invoice/cac:LegalMonetaryTotal/cbc:PayableAmount
     cbc_PayableAmount = etree.SubElement(cac_LegalMonetaryTotal,
-                                         "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}PayableAmount"); cbc_PayableAmount.attrib['currencyID'] = "EUR";
+                                     "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}PayableAmount");
+    cbc_PayableAmount.attrib['currencyID'] = "EUR";
     cbc_TaxInclusiveAmount.attrib['currencyID'] = "EUR";
     cbc_TaxInclusiveAmount.text = ""
 
 
 
     # Calcul de la somme totale des valeurs de la TVA
-    tax_amount_sum = transalp_invoice['TVA'].sum();
-    cbc_tax_amount.text = str(tax_amount_sum)
+    # tax_amount_sum = transalp_invoice['TVA'].sum();
+    # cbc_tax_amount.text = str(tax_amount_sum)
 
     # Calcul de la somme totale des valeurs de la facture hors taxe
-    tax_exclude_amount_sum = transalp_invoice['HT'].sum();
+    tax_exclude_amount_sum = transalp_invoice['HT'][0];
     cbc_TaxExclusiveAmount.text = str(tax_exclude_amount_sum)
 
     # Calcul de la somme totale des valeurs de la facture TTC
-    tax_include_amount_sum = transalp_invoice['TTC'].sum();
+    tax_include_amount_sum = transalp_invoice['TTC'][0]
     cbc_TaxInclusiveAmount.text = str(tax_include_amount_sum)
 
     # Calcul de la somme totale des valeurs de la facture à payer TTC
-    payable_amount_sum = transalp_invoice['TTC'].sum();
+    payable_amount_sum = transalp_invoice['TTC'][0];
     cbc_PayableAmount.text = str(payable_amount_sum)
 
     # Recuperation de la reference de commande de Orange France
-    transalp_orange_reference = transalp_invoice['Num contrat'][0]
+    transalp_orange_reference = transalp_invoice['Num cde orange'][0]
 
-    #transalp_fact_num= transalp_invoice['Num fac'][0]
-
-    #print("transalp_fact_num",transalp_fact_num)
-
-    # etree.SubElement(root,
-    #                  "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}ID").text = transalp_fact_num
-
+    # /Invoice/cac:OrderReference
     etree.SubElement(cac_order_reference,
                      "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}ID").text = str(
         transalp_orange_reference)
@@ -332,42 +369,6 @@ def create_ubl_invoice(invoice_data):
     # print("tax_amount_sum",tax_amount_sum)
 
     for index, row in transalp_invoice.iterrows():
-        # Valeurs pieds de la facture
-        # /Invoice/cac:TaxTotal/cac:TaxSubtotal/
-        cac_TaxSubtotal = etree.SubElement(cac_tax_total,
-                                           "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}TaxSubtotal")
-
-        # /Invoice/cac:TaxTotal/cac:TaxSubtotal/cbc:TaxableAmount
-        cbc_TaxableAmount = etree.SubElement(cac_TaxSubtotal,
-                                             "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}TaxableAmount");
-        cbc_TaxableAmount.attrib['currencyID'] = "EUR";
-        cbc_TaxableAmount.text = str(row['HT'])
-
-        # /Invoice/cac:TaxTotal/cac:TaxSubtotal/cbc:TaxAmount
-        cbc_TaxAmount = etree.SubElement(cac_TaxSubtotal,
-                                         "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}TaxAmount");
-        cbc_TaxAmount.attrib['currencyID'] = "EUR";
-        cbc_TaxAmount.text = str(row['TVA'])
-
-        # /Invoice/cac:TaxTotal/cac:TaxSubtotal/cbc:Percent
-        cbc_percent = etree.SubElement(cac_TaxSubtotal,
-                                       "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}Percent");
-        cbc_percent.text = str(row['code TVA'])
-
-        # /Invoice/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory
-        cac_TaxCategory = etree.SubElement(cac_TaxSubtotal,
-                                           "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}TaxCategory")
-
-        # /Invoice/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID
-
-        cac_TaxScheme_pied = etree.SubElement(cac_TaxCategory,
-                                              "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}TaxScheme")
-
-        # /Invoice/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID
-        etree.SubElement(cac_TaxScheme_pied,
-                         "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}ID").text = "VAT"
-
-        # Valeurs des lignes de la facture
 
         # /Invoice/cac:InvoiceLine
         cac_InvoiceLine = etree.SubElement(root,
@@ -375,7 +376,7 @@ def create_ubl_invoice(invoice_data):
 
         # /Invoice/cac:InvoiceLine/cbc:ID
         etree.SubElement(cac_InvoiceLine,
-                         "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}ID").text = "2"
+                         "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}ID").text = str(row['Ligne'])
 
         # /Invoice/cac:InvoiceLine/cbc:InvoicedQuantity
         cac_InvoicedQuantity = etree.SubElement(cac_InvoiceLine,
@@ -387,7 +388,8 @@ def create_ubl_invoice(invoice_data):
         cbc_LineExtensionAmount = etree.SubElement(cac_InvoiceLine,
                                                    "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}LineExtensionAmount");
         cbc_LineExtensionAmount.attrib['currencyID'] = "EUR";
-        cbc_LineExtensionAmount.text = str(row['HT'])
+        #cbc_LineExtensionAmount.text = str(row['HT'])
+        cbc_LineExtensionAmount.text = str(float(row['Qté']) * float(row['PU']))
 
         # /Invoice/cac:InvoiceLine/cac:OrderLineReference
         cac_OrderLineReference = etree.SubElement(cac_InvoiceLine,
@@ -395,7 +397,7 @@ def create_ubl_invoice(invoice_data):
 
         # /Invoice/cac:InvoiceLine/cac:OrderLineReference/cbc:LineID
         etree.SubElement(cac_OrderLineReference,
-                         "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}LineID").text = "2"
+                         "{urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2}LineID").text =str(row['Ligne'])
 
         # /Invoice/cac:InvoiceLine/cac:DespatchLineReference
         cac_DespatchLineReference = etree.SubElement(cac_InvoiceLine,
@@ -470,6 +472,7 @@ def save_invoice_to_file(invoice, file_path):
     with open(file_path, "wb") as file:
 
         tree.write(file, pretty_print=True, xml_declaration=True, encoding="utf-8")
+
 
 
         #tree.write(file_path, pretty_print=True, xml_declaration=True, encoding="utf-8")
